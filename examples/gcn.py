@@ -1,9 +1,11 @@
 import os.path as osp
 import argparse
 
+import time
 import torch
 import torch.nn.functional as F
 from torch_geometric.datasets import Planetoid
+from torch_geometric.datasets import Reddit
 import torch_geometric.transforms as T
 from torch_geometric.nn import GCNConv, ChebConv  # noqa
 
@@ -12,7 +14,7 @@ parser.add_argument('--use_gdc', action='store_true',
                     help='Use GDC preprocessing.')
 args = parser.parse_args()
 
-dataset = 'Cora'
+dataset = 'PubMed'
 path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data', dataset)
 dataset = Planetoid(path, dataset, transform=T.NormalizeFeatures())
 data = dataset[0]
@@ -74,11 +76,15 @@ def test():
 
 
 best_val_acc = test_acc = 0
+train_time = 0
 for epoch in range(1, 201):
+    start = time.time()
     train()
+    train_time += time.time() - start
     train_acc, val_acc, tmp_test_acc = test()
     if val_acc > best_val_acc:
         best_val_acc = val_acc
         test_acc = tmp_test_acc
     log = 'Epoch: {:03d}, Train: {:.4f}, Val: {:.4f}, Test: {:.4f}'
     print(log.format(epoch, train_acc, best_val_acc, test_acc))
+print('train time per epoch:', train_time / 200)
